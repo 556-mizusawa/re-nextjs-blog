@@ -3,6 +3,9 @@ import path from 'path';
 import matter from 'gray-matter';
 import remark from 'remark';
 import html from 'remark-html';
+import fetch from 'node-fetch';
+import { Base64 } from 'js-base64';
+// const base64 = require('js-base64').base64;
 
 const postsDirectory = path.join(process.cwd(), 'posts');
 
@@ -37,8 +40,15 @@ export const getSortedPostsData = () => {
   });
 };
 
-export const getAllPostIds = () => {
-  const fileNames = fs.readdirSync(postsDirectory);
+export const getAllPostIds = async () => {
+  // const fileNames = fs.readdirSync(postsDirectory);
+
+  const repoUrl =
+    'https://api.github.com/repos/556-mizusawa/re-nextjs-blog/contents/posts';
+  const response = await fetch(repoUrl);
+  const files = await response.json();
+
+  const fileNames = files.map((file: { name: string }) => file.name);
 
   // Returns an array that looks like this:
   // [
@@ -53,7 +63,7 @@ export const getAllPostIds = () => {
   //     }
   //   }
   // ]
-  return fileNames.map((fileName) => {
+  return fileNames.map((fileName: string) => {
     return {
       params: {
         id: fileName.replace(/\.md$/, ''),
@@ -63,8 +73,13 @@ export const getAllPostIds = () => {
 };
 
 export const getPostData = async (id: string) => {
-  const fullPath = path.join(postsDirectory, `${id}.md`);
-  const fileContents = fs.readFileSync(fullPath, 'utf8');
+  // const fullPath = path.join(postsDirectory, `${id}.md`);
+  // const fileContents = fs.readFileSync(fullPath, 'utf8');
+
+  const repoUrl = `https://api.github.com/repos/556-mizusawa/re-nextjs-blog/contents/posts/${id}.md`;
+  const response = await fetch(repoUrl);
+  const file = await response.json();
+  const fileContents = Base64.decode(file.content);
 
   // Use gray-matter to parse the post metadata section
   const matterResult = matter(fileContents);
